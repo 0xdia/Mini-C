@@ -10,20 +10,27 @@ Declaration -> Type IdentList ;
 
 Type -> int | float
 
-IdentList -> identifier , IdentList | identifier
+IdentList -> identifier _IdentList
 
-Stmt -> for ( Expr ; OptExpr ; OptExpr ) Stmt
-| for ( Expr ; ; OptExpr ) Stmt
-| for ( Expr ; OptExpr ; ) Stmt
-| for ( Expr ; ; ) Stmt
+_IdentList -> , IdentList | ε
+
+Stmt -> for ( Expr ; _ForStmt
 | while ( Expr ) Stmt
 | Expr ;
-| if ( Expr ) Stmt ElsePart
-| if ( Expr ) Stmt
-| { StmtList }
-| { }
+| if ( Expr ) Stmt _IfStmt
+| { _CurStmt
 | Type IdentList ;
 | ;
+
+_CurStmt -> StmtList } | }
+
+_IfStmt -> ElsePart | ε
+
+_ForStmt -> OptExpr ; _OptExprForStmt | ; _SemicForStmt
+
+_OptExprForStmt -> OptExpr ) Stmt | ) Stmt
+
+_SemicForStmt -> OptExpr ) Stmt | ) Stmt
 
 OptExpr -> identifier = Expr
 | Rvalue Compare Mag
