@@ -1,6 +1,8 @@
 Function -> Type identifier ( ArgList ) CompoundStmt
 
-ArgList -> Type identifier | ArgList , Arg
+ArgList -> Type identifier _ArgList
+
+_ArgList -> , Arg _ArgList | ε
 
 Arg -> Type identifier
 
@@ -66,35 +68,36 @@ Expr -> identifier = Expr
 | identifier
 | number
 
-Rvalue -> Rvalue Compare Mag
-| Mag + Term
-| Mag - Term
-| Term * Factor
-| Term / Factor
-| ( Expr )
-| - Factor
-| + Factor
-| identifier
-| number
+Rvalue -> Mag + Term _Rvalue
+| Mag - Term _Rvalue
+| Term * Factor _Rvalue
+| Term / Factor _Rvalue
+| ( Expr ) _Rvalue
+| - Factor _Rvalue
+| + Factor _Rvalue
+| identifier _Rvalue
+| number _Rvalue
+
+_Rvalue -> Compare Mag _Rvalue | ε
 
 Compare -> == | < | > | <= | >= | !=
 
-Mag -> Mag + Term
-| Mag - Term
-| Term * Factor
-| Term / Factor
-| ( Expr )
-| - Factor
-| + Factor
-| identifier
-| number
+Mag -> Term * Factor _Mag
+| Term / Factor _Mag
+| ( Expr ) _Mag
+| - Factor _Mag
+| + Factor _Mag
+| identifier _Mag
+| number _Mag
 
-Term -> Term * Factor
-| Term / Factor
-| ( Expr )
-| - Factor
-| + Factor
-| identifier
-| number
+_Mag -> + Term _Mag | - Term _Mag | ε
+
+Term -> ( Expr ) _Term
+| - Factor _Term
+| + Factor _Term
+| identifier _Term
+| number _Term
+
+_Term -> * Factor _Term | / Factor _Term | ε
 
 Factor -> ( Expr ) | - Factor | + Factor | identifier | number
