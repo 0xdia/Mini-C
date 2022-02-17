@@ -1,6 +1,6 @@
 Function -> Type identifier ( ArgList ) CompoundStmt
 
-ArgList -> Arg | ArgList , Arg
+ArgList -> Type identifier | ArgList , Arg
 
 Arg -> Type identifier
 
@@ -10,36 +10,91 @@ Type -> int | float
 
 IdentList -> identifier , IdentList | identifier
 
-Stmt -> ForStmt
-| WhileStmt
+Stmt -> for ( Expr ; OptExpr ; OptExpr ) Stmt
+| for ( Expr ; ; OptExpr ) Stmt
+| for ( Expr ; OptExpr ; ) Stmt
+| for ( Expr ; ; ) Stmt
+| while ( Expr ) Stmt
 | Expr ;
-| IfStmt
-| CompoundStmt
-| Declaration
+| if ( Expr ) Stmt ElsePart
+| if ( Expr ) Stmt
+| { StmtList }
+| { }
+| Type IdentList ;
 | ;
 
-ForStmt -> for ( Expr ; OptExpr ; OptExpr ) Stmt
+OptExpr -> identifier = Expr
+| Rvalue Compare Mag
+| Mag + Term
+| Mag - Term
+| Term * Factor
+| Term / Factor
+| ( Expr )
+| - Factor
+| + Factor
+| identifier
+| number
 
-OptExpr -> Expr | ε
-
-WhileStmt -> while ( Expr ) Stmt
-
-IfStmt -> if ( Expr ) Stmt ElsePart
-
-ElsePart -> else Stmt | ε
+ElsePart -> else Stmt
 
 CompoundStmt -> { StmtList }
+| { }
 
-StmtList -> StmtList Stmt | ε
+StmtList -> StmtList Stmt
+| for ( Expr ; OptExpr ; OptExpr ) Stmt
+| for ( Expr ; ; OptExpr ) Stmt
+| for ( Expr ; OptExpr ; ) Stmt
+| for ( Expr ; ; ) Stmt
+| while ( Expr ) Stmt
+| Expr ;
+| if ( Expr ) Stmt ElsePart
+| if ( Expr ) Stmt
+| { StmtList }
+| { }
+| Type IdentList ;
+| ;
 
-Expr -> identifier = Expr | Rvalue
+Expr -> identifier = Expr
+| Rvalue Compare Mag
+| Mag + Term
+| Mag - Term
+| Term * Factor
+| Term / Factor
+| ( Expr )
+| - Factor
+| + Factor
+| identifier
+| number
 
-Rvalue -> Rvalue Compare Mag | Mag
+Rvalue -> Rvalue Compare Mag
+| Mag + Term
+| Mag - Term
+| Term * Factor
+| Term / Factor
+| ( Expr )
+| - Factor
+| + Factor
+| identifier
+| number
 
 Compare -> == | < | > | <= | >= | !=
 
-Mag -> Mag + Term | Mag - Term | Term
+Mag -> Mag + Term
+| Mag - Term
+| Term * Factor
+| Term / Factor
+| ( Expr )
+| - Factor
+| + Factor
+| identifier
+| number
 
-Term -> Term * Factor | Term / Factor | Factor
+Term -> Term * Factor
+| Term / Factor
+| ( Expr )
+| - Factor
+| + Factor
+| identifier
+| number
 
 Factor -> ( Expr ) | - Factor | + Factor | identifier | number
