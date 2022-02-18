@@ -32,15 +32,16 @@ _OptExprForStmt -> OptExpr ) Stmt | ) Stmt
 
 _SemicForStmt -> OptExpr ) Stmt | ) Stmt
 
-OptExpr -> identifier = Expr
+OptExpr -> identifier _Affect
 | Rvalue Compare Mag
 | Mag _MagExpr
 | Term _TermExpr
 | ( Expr )
 | - Factor
 | + Factor
-| identifier
 | number
+
+_Affect -> = Expr | ε
 
 _MagExpr -> + Term | - Term 
 
@@ -59,14 +60,13 @@ StmtList -> StmtList Stmt
 | Type IdentList ;
 | ;
 
-Expr -> identifier = Expr
+Expr -> identifier _Affect
 | Rvalue Compare Mag
 | Mag _MagExpr
 | Term _TermExpr
 | ( Expr )
 | - Factor
 | + Factor
-| identifier
 | number
 
 Rvalue -> Mag _MagRvalue
@@ -83,7 +83,9 @@ _TermRvalue -> * Factor _Rvalue | / Factor _Rvalue
 
 _Rvalue -> Compare Mag _Rvalue | ε
 
-Compare -> == | < | > | <= | >= | !=
+Compare -> == | < _OrEqual | > _OrEqual | !=
+
+_OrEqual -> = | ε
 
 Mag -> Term _TermMag
 | ( Expr ) _Mag
