@@ -51,14 +51,15 @@ ElsePart -> else Stmt
 
 CompoundStmt -> { _CurStmt
 
-StmtList -> StmtList Stmt
-| for ( Expr ; _ForStmt
-| while ( Expr ) Stmt
-| Expr ;
-| if ( Expr ) Stmt _IfStmt
-| { _CurStmt
-| Type IdentList ;
-| ;
+StmtList -> for ( Expr ; _ForStmt _StmtList
+| while ( Expr ) Stmt _StmtList
+| Expr ; _StmtList
+| if ( Expr ) Stmt _IfStmt _StmtList
+| { _CurStmt _StmtList
+| Type IdentList ; _StmtList
+| ; _StmtList
+
+_StmtList -> Stmt _StmtList | ε
 
 Expr -> identifier _Affect
 | Rvalue Compare Mag
