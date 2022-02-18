@@ -70,17 +70,13 @@ Expr -> identifier _Affect
 | + Factor
 | number
 
-Rvalue -> Mag _MagRvalue
-| Term _TermRvalue
+Rvalue -> Mag _MagExpr _Rvalue
+| Term _TermExpr _Rvalue
 | ( Expr ) _Rvalue
 | - Factor _Rvalue
 | + Factor _Rvalue
 | identifier _Rvalue
 | number _Rvalue
-
-_MagRvalue -> + Term _Rvalue | - Term _Rvalue
-
-_TermRvalue -> * Factor _Rvalue | / Factor _Rvalue
 
 _Rvalue -> Compare Mag _Rvalue | ε
 
@@ -88,16 +84,14 @@ Compare -> == | < _OrEqual | > _OrEqual | !=
 
 _OrEqual -> = | ε
 
-Mag -> Term _TermMag
+Mag -> Term  _TermExpr _Mag
 | ( Expr ) _Mag
 | - Factor _Mag
 | + Factor _Mag
 | identifier _Mag
 | number _Mag
 
-_TermMag -> * Factor _Mag | / Factor _Mag
-
-_Mag -> + Term _Mag | - Term _Mag | ε
+_Mag -> _MagExpr _Mag | ε
 
 Term -> ( Expr ) _Term
 | - Factor _Term
@@ -105,6 +99,6 @@ Term -> ( Expr ) _Term
 | identifier _Term
 | number _Term
 
-_Term -> * Factor _Term | / Factor _Term | ε
+_Term -> _TermExpr _Term | ε
 
 Factor -> ( Expr ) | - Factor | + Factor | identifier | number
