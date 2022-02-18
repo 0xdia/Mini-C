@@ -34,68 +34,65 @@ _SemicForStmt -> OptExpr ) Stmt | ) Stmt
 
 OptExpr -> identifier = Expr
 | Rvalue Compare Mag
-| Mag + Term
-| Mag - Term
-| Term * Factor
-| Term / Factor
+| Mag _MagExpr
+| Term _TermExpr
 | ( Expr )
 | - Factor
 | + Factor
 | identifier
 | number
 
+_MagExpr -> + Term | - Term 
+
+_TermExpr -> * Factor | / Factor
+
 ElsePart -> else Stmt
 
-CompoundStmt -> { StmtList }
-| { }
+CompoundStmt -> { _CurStmt
 
 StmtList -> StmtList Stmt
-| for ( Expr ; OptExpr ; OptExpr ) Stmt
-| for ( Expr ; ; OptExpr ) Stmt
-| for ( Expr ; OptExpr ; ) Stmt
-| for ( Expr ; ; ) Stmt
+| for ( Expr ; _ForStmt
 | while ( Expr ) Stmt
 | Expr ;
-| if ( Expr ) Stmt ElsePart
-| if ( Expr ) Stmt
-| { StmtList }
-| { }
+| if ( Expr ) Stmt _IfStmt
+| { _CurStmt
 | Type IdentList ;
 | ;
 
 Expr -> identifier = Expr
 | Rvalue Compare Mag
-| Mag + Term
-| Mag - Term
-| Term * Factor
-| Term / Factor
+| Mag _MagExpr
+| Term _TermExpr
 | ( Expr )
 | - Factor
 | + Factor
 | identifier
 | number
 
-Rvalue -> Mag + Term _Rvalue
-| Mag - Term _Rvalue
-| Term * Factor _Rvalue
-| Term / Factor _Rvalue
+Rvalue -> Mag _MagRvalue
+| Term _TermRvalue
 | ( Expr ) _Rvalue
 | - Factor _Rvalue
 | + Factor _Rvalue
 | identifier _Rvalue
 | number _Rvalue
 
+_MagRvalue -> + Term _Rvalue | - Term _Rvalue
+
+_TermRvalue -> * Factor _Rvalue | / Factor _Rvalue
+
 _Rvalue -> Compare Mag _Rvalue | ε
 
 Compare -> == | < | > | <= | >= | !=
 
-Mag -> Term * Factor _Mag
-| Term / Factor _Mag
+Mag -> Term _TermMag
 | ( Expr ) _Mag
 | - Factor _Mag
 | + Factor _Mag
 | identifier _Mag
 | number _Mag
+
+_TermMag -> * Factor _Mag | / Factor _Mag
 
 _Mag -> + Term _Mag | - Term _Mag | ε
 
