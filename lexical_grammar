@@ -11,3 +11,5 @@ comparator: == | > | < | <= | >= | !=
 punctuation: , | ; | { | } | ( | )
 
 arithmetic_operator: + | - | * | /
+
+skip: " " | "\n" | "\r" | "\r\n"
