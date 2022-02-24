@@ -1,6 +1,8 @@
 Function -> Type identifier ( ArgList ) CompoundStmt
 
-ArgList -> Arg | ArgList , Arg
+ArgList -> Arg _ArgList
+
+_ArgList -> , Arg _ArgList | ε
 
 Arg -> Type identifier
 
@@ -8,7 +10,9 @@ Declaration -> Type IdentList ;
 
 Type -> int | float
 
-IdentList -> identifier , IdentList | identifier
+IdentList -> identifier _OrIdentList
+
+_OrIdentList -> , IdentList | ε
 
 Stmt -> ForStmt
 | WhileStmt
@@ -30,16 +34,24 @@ ElsePart -> else Stmt | ε
 
 CompoundStmt -> { StmtList }
 
-StmtList -> StmtList Stmt | ε
+StmtList -> _StmtList
+
+_StmtList -> Stmt _StmtList | ε
 
 Expr -> identifier = Expr | Rvalue
 
-Rvalue -> Rvalue Compare Mag | Mag
+Rvalue -> Mag _Rvalue
+
+_Rvalue -> Compare Mag _Rvalue | ε
 
 Compare -> == | < | > | <= | >= | !=
 
-Mag -> Mag + Term | Mag - Term | Term
+Mag -> Term _Mag
 
-Term -> Term * Factor | Term / Factor | Factor
+_Mag -> + Term _Mag | - Term _Mag | ε
+
+Term -> Factor _Term
+
+_Term -> * Factor _Term | / Factor _Term | ε
 
 Factor -> ( Expr ) | - Factor | + Factor | identifier | number
