@@ -166,7 +166,7 @@ void Expr():
 {}
 {
     LOOKAHEAD(2)
-    <ID>  Expr() | Rvalue()
+    <ID> "=" Expr() | Rvalue()
 }
 
 void Rvalue():

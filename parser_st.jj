@@ -643,7 +643,7 @@ void Expr():
     try {
 /*@egen*/   
     LOOKAHEAD(2)
-    <ID> Expr() | Rvalue()/*@bgen(jjtree)*/
+    <ID> "=" Expr() | Rvalue()/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
