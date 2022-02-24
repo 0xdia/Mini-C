@@ -45,9 +45,6 @@ TOKEN : { < EQUAL : "==" >
         | < LOWEREQ: "<=" >
         | < NOTEQ: "!=" >
         }
-
-TOKEN : { < AFF : <ID> (" " | "\r" | "\n" | "\r\n")* "=" > }
-
         
 TOKEN : { < COMMA : "," > 
         | < SEMIC: ";" >
@@ -176,8 +173,9 @@ void _StmtList():
 
 void Expr():
 {}
-{
-    <AFF> Expr() | Rvalue()
+{   
+    LOOKAHEAD(2)
+    <ID> Expr() | Rvalue()
 }
 
 void Rvalue():
