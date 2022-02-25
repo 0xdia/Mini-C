@@ -1,233 +1,186 @@
-PARSER_BEGIN(minic)
+PARSER_BEGIN(MiniC)
 
-public class minic {
+public class MiniC {
 
-  public static void main(String args[]) throws ParseException {
-    minic parser = new minic(System.in);
-
-    try {
-      SimpleNode n = parser.Function();
-      n.dump("");
-      System.out.println("Thank you.");
-    } catch (Exception e) {
-      System.out.println("Oops.");
-      System.out.println(e.getMessage());
-      e.printStackTrace();
+    public static void main(String args[]) {
+        MiniC parser = new MiniC(System.in);
+        try {
+            SimpleNode n = parser.Function();
+            n.dump("");
+            System.out.println("Thank you.");
+        }
+        catch (Exception e) {
+            System.out.println("Oops.");
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
     }
-  }
-
 }
 
-PARSER_END(minic)
+PARSER_END(MiniC)
 
 /** Lexical analyzer **/
 
-SKIP: { " " | "\r" | "\n" | "\r\n" }
-
-TOKEN : { < INT : "int" > 
-        | < FLOAT: "float" >
-        }
-
-TOKEN : { < IF : "if" > 
-        | < ELSE: "else" >
-        | < WHILE: "while" >
-        | < FOR: "for" >
-        }
-
-TOKEN : { < ID : ["a"-"z","A"-"Z","_"](["a"-"z","A"-"Z","_","0"-"9"])* > 
-        | < NUMBER: (["0"-"9"])*["."](["0"-"9"])+ | (["0"-"9"])+ >
-        }
-
-TOKEN : { < EQUAL : "==" > 
-        | < GREATER: ">" >
-        | < LOWER: "<" >
-        | < GREATEQ: ">=" >
-        | < LOWEREQ: "<=" >
-        | < NOTEQ: "!=" >
-        }
-        
-TOKEN : { < COMMA : "," > 
-        | < SEMIC: ";" >
-        | < OPCUR: "{" >
-        | < CLCUR: "}" >
-        | < OPPAR: "(" >
-        | < CLPAR: ")" >
-        }
-
-TOKEN : { < PLUS : "+" > 
-        | < MINUS: "-" >
-        | < MULT: "*" >
-        | < DIV: "/" >
-        }
-
-
-/** Root production. */
-SimpleNode Function() :
-{}
-{
-  Type() <ID> <OPPAR> ArgList() <CLPAR> CompoundStmt() <EOF>
-  { return jjtThis; }
+SKIP : {
+    " " |
+    "\r" |
+    "\n" |
+    "\r\n"
 }
 
-void ArgList():
-{}
+TOKEN : {
+    <INT: "int"> |
+    <FLOAT: "float"> |
+    <IF: "if"> |
+    <ELSE: "else"> |
+    <WHILE: "while"> |
+    <FOR: "for"> |
+    <ID: ["a"-"z", "A"-"Z", "_"](["a"-"z", "A"-"Z", "_", "0"-"9"])*> |
+    <NUMBER: (["0"-"9"])*["."](["0"-"9"])+ | (["0"-"9"])+>
+}
+
+/** Root production. */
+SimpleNode Function() : {}
+{
+    Type() <ID> "(" ArgList() ")" CompoundStmt() <EOF>
+    {
+        return jjtThis;
+    }
+}
+
+void ArgList() : {}
 {
     Arg() _ArgList()
 }
 
-void _ArgList():
-{}
+void _ArgList() : {}
 {
-    <COMMA> Arg() _ArgList() | {}
+    "," Arg() _ArgList() | {}
 }
 
-void Arg():
-{}
+void Arg() : {}
 {
     Type() <ID>
 }
 
-void Declaration():
-{}
+void Declaration() : {}
 {
-    Type() IdentList() <SEMIC>
+    Type() IdentList() ";"
 }
 
-void Type():
-{}
+void Type() : {}
 {
     <INT> | <FLOAT>
 }
 
-void IdentList():
-{}
+void IdentList() : {}
 {
     <ID> _OrIdentList()
 }
 
-void _OrIdentList():
-{}
+void _OrIdentList() : {}
 {
-    <COMMA> IdentList() | {}
+    "," IdentList() | {}
 }
 
-void Stmt():
-{}
+void Stmt() : {}
 {
-    ForStmt() 
-    | WhileStmt() 
-    | Expr() <SEMIC> 
-    | IfStmt() 
-    | CompoundStmt() 
-    | Declaration() 
-    | <SEMIC> 
+    ForStmt() |
+    WhileStmt() |
+    Expr() ";" |
+    IfStmt() |
+    CompoundStmt() |
+    Declaration() |
+    ";"
 }
 
-void ForStmt():
-{}
+void ForStmt() : {}
 {
-    <FOR> <OPPAR> Expr() <SEMIC> OptExpr() <SEMIC> OptExpr() <CLPAR> Stmt()
+    <FOR> "(" Expr() ";" OptExpr() ";" OptExpr() ")" Stmt()
 }
 
-void OptExpr():
-{}
+void OptExpr() : {}
 {
     Expr() | {}
 }
 
-void WhileStmt():
-{}
+void WhileStmt() : {}
 {
-    <WHILE> <OPPAR> Expr() <CLPAR> Stmt()
+    <WHILE> "(" Expr() ")" Stmt()
 }
 
-void IfStmt():
-{}
+void IfStmt() : {}
 {
-    <IF> <OPPAR> Expr() <CLPAR> Stmt() ElsePart()
+    <IF> "(" Expr() ")" Stmt() ElsePart()
 }
 
-void ElsePart():
-{}
+void ElsePart() : {}
 {
     <ELSE> Stmt() | {}
 }
 
-void CompoundStmt():
-{}
+void CompoundStmt() : {}
 {
-    <OPCUR> StmtList() <CLCUR>
+    "{" StmtList() "}"
 }
 
-void StmtList():
-{}
+void StmtList() : {}
 {
     _StmtList()
 }
 
-void _StmtList():
-{}
+void _StmtList() : {}
 {
     Stmt() _StmtList() | {}
 }
 
-void Expr():
-{}
-{   
-    LOOKAHEAD(2)
-    <ID> "=" Expr() | Rvalue()
+void Expr() : {}
+{
+    LOOKAHEAD(2) <ID> "=" Expr() | Rvalue()
 }
 
-void Rvalue():
-{}
+void Rvalue() : {}
 {
     Mag() _Rvalue()
 }
 
-void _Rvalue():
-{}
+void _Rvalue() : {}
 {
     Compare() Mag() _Rvalue() | {}
 }
 
-void Compare():
-{}
+void Compare() : {}
 {
-    <EQUAL> | <LOWER> | <GREATER> | <LOWEREQ> | <GREATEQ> | <NOTEQ>
+    "==" | "<" | ">" | "<=" | ">=" | "!="
 }
 
-void Mag():
-{}
+void Mag() : {}
 {
     Term() _Mag()
 }
 
-void _Mag():
-{}
+void _Mag() : {}
 {
-    <PLUS> Term() _Mag() | <MINUS> Term() _Mag() | {} 
+    "+" Term() _Mag() | "-" Term() _Mag() | {}
 }
 
-void Term():
-{}
+void Term() : {}
 {
     Factor() _Term()
 }
 
-void _Term():
-{}
+void _Term() : {}
 {
-    <MULT> Factor() _Term() |
-    <DIV>  Factor() _Term() |
+    "*" Factor() _Term() |
+    "/" Factor() _Term() |
     {}
 }
 
-void Factor():
-{}
+void Factor() : {}
 {
-    <OPPAR> Expr() <CLPAR> |
-    <PLUS> Expr()          |
-    <MINUS> Expr()         |
-    <ID>                   |
+    "(" Expr() ")" |
+    "+" Expr() |
+    "-" Expr() |
+    <ID> |
     <NUMBER>
 }
