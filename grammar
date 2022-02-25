@@ -22,13 +22,75 @@ Stmt -> ForStmt
 | Declaration
 | ;
 
-ForStmt -> for ( Expr ; OptExpr ; OptExpr ) Stmt
+ForStmt -> 
+        for ( Expr 
+        { 
+            for_lbl++;  
+        } 
+        ; 
+        { 
+            newLabel(FOR_for_lbl_LBL1);    
+        } 
+        OptExpr1 ;
+        {
+            OptExpr2.h = OptExpr1.v; 
 
-OptExpr -> Expr | ε
+            GenererQuad(CMP, OptExpr2.h, 0, );
+            GenererQuad(JNE,,, FOR_for_lbl_LBL2); 
 
-WhileStmt -> while ( Expr ) Stmt
+            GenererQuad(JMP,,, FOR_for_lbl_LBL3);  
+            
+            newLabel(FOR_lbl_LBL4); 
+        } 
+        OptExpr2 ) 
+        { 
+            GenererQuad(JMP,,, FOR_for_lbl_LBL1); 
+            newLabel(FOR_for_lbl_LBL2); 
+        } 
+        Stmt 
+        { 
+            GenererQuad(JMP,,, FOR_for_lbl_LBL4);
+            newLabel(FOR_for_lbl_LBL3); 
+        }
 
-IfStmt -> if ( Expr ) Stmt ElsePart
+OptExpr -> Expr { OptExpr.v = Expr.v; } | ε { OptExpr.v = null; }
+
+WhileStmt -> 
+            while ( 
+            { 
+                whl_lbl++;
+                newLabel(WHL_whl_lbl_LIB1);
+            } 
+            Expr
+            {
+                GenererQuad(CMP, Expr.v, 0, );
+                GenererQuad(JE,,, WHL_whl_lbl_LBL2);   
+            } 
+            ) Stmt
+            {
+                GenererQuad(JMP,,, WHL_whl_lbl_LBL1);
+                newLabel(WHL_lbl_LBL2); 
+            }
+
+IfStmt -> 
+        if ( 
+        {
+            if_lbl++;
+        }
+        Expr )
+        {
+            GenererQuad(CMP, Expr.v, 0, );
+            GenererQuad(JE,,, IF_if_lbl_LBL1);
+        }
+        Stmt
+        {
+            GenererQuad(JMP,,, IF_if_lbl_LBL2);
+            newLabel(IF_if_lbl_LBL1);
+        }
+        ElsePart
+        {
+            newLabel(IF_if_lbl_LBL2);
+        }
 
 ElsePart -> else Stmt | ε
 
@@ -38,20 +100,129 @@ StmtList -> _StmtList
 
 _StmtList -> Stmt _StmtList | ε
 
-Expr -> identifier = Expr | Rvalue
+Expr -> 
+        identifier = Expr1 
+        { 
+            identifier.v = Expr1.v;
+            Expr.v = identifier.v; 
+            GenererQuad(MOV, Expr1.v,, identifier.v);
+        } | 
+        Rvalue
+        {
+            Expr.v = Rvalue.v;
+        }
 
-Rvalue -> Mag _Rvalue
+Rvalue -> Mag { _Rvalue.h = Mag.v } _Rvalue { Rvalue.v = _Rvalue.v }
 
-_Rvalue -> Compare Mag _Rvalue | ε
+_Rvalue -> 
+        {
+            cmp_lbl++;
+        }
+        Compare 
+        {
+            Mag.h = Compare.v;
+        }
+        Mag
+        {
+            GenererQuad(MOV, 1, , TEMP_i);
 
-Compare -> == | < | > | <= | >= | !=
+            GenererQuad(Mag.h, _Rvalue.h, Mag.v, TEMP_i);
+            
+            if (Mag.h == "==")
+                GenererQuad(JE, , , COMP_cmp_lbl_LBL1);
+            else if (Mag.h == "<")
+                GenererQuad(JL, , , COMP_cmp_lbl_LBL1);
+            else if (Mag.h == ">")
+                GenererQuad(JG, , , COMP_cmp_lbl_LBL1);
+            else if (Mag.h == "<=")
+                GenererQuad(JLE, , , COMP_cmp_lbl_LBL1);
+            else if (Mag.h == ">=")
+                GenererQuad(JGE, , , COMP_cmp_lbl_LBL1);
+            else if (Mag.h == "!=")
+                GenererQuad(JNE, , , COMP_cmp_lbl_LBL1);
+            
+            GenererQuad(MOV, 0, , TEMP_i);
+            _Rvalue1.h = TEMP_i;
+            i++;
 
-Mag -> Term _Mag
+            newLabel(COMP_cmp_lbl_LBL1);
+        }
+        _Rvalue1
+        {
+            _Rvalue.v = _Rvalue1.h = _Rvalue1.h Compare.v _Rvalue1.v;
+        } |
+        ε { _Rvalue.v = _Rvalue.h; }
 
-_Mag -> + Term _Mag | - Term _Mag | ε
+Compare -> 
+        == { Compare.v = "=="; } | 
+        < { Compare.v = "<"; } | 
+        > { Compare.v = ">"; } | 
+        <= { Compare.v = "<="; } | 
+        >= { Compare.v = ">="; } | 
+        != { Compare.v = "!="; }
 
-Term -> Factor _Term
+Mag -> Term { _Mag.h = Term.v; } _Mag { Mag.v = _Mag.v; }
 
-_Term -> * Factor _Term | / Factor _Term | ε
+_Mag -> 
+        + Term 
+        {
+            _Mag1.h = Term.v;
+        }
+        _Mag1
+        {
+            _Mag.v = _Mag1.h + _Mag1.v; 
+            GenererQuad(ADD, _Mag1.v, _Mag1.h, TEMP_i);
+            i++;
+        } | 
+        - Term 
+        {
+            _Mag1.h = Term.v;
+        }
+        _Mag1
+        {
+            _Mag.v = _Mag1.h - _Mag1.v; 
+            GenererQuad(SUB, _Mag.h, _Mag.v, TEMP_i);
+            i++;
+        } | 
+        ε { _Mag.v = _Mag.v; }
 
-Factor -> ( Expr ) | - Factor | + Factor | identifier | number
+Term -> Factor { _Term.h = Factor.v; } _Term { Term.v = _Term.v; }
+
+_Term -> 
+        * Factor 
+        {
+            _Term1.h = Factor.v * _Term.h;
+        }
+        _Term1
+        {
+            _Term.v = _Term1.h * _Term1.v; 
+            GenererQuad(MUL, _Term1.v, _Term1.h, TEMP_i);
+            i++;
+        } |
+        / Factor
+        {
+            _Term1.h = Factor.v;
+        }
+        _Term1
+        {
+            _Term.v = _Term1.h / _Term1.v; 
+            GenererQuad(DIV, _Term1.v, _Term1.h, TEMP_i);
+            i++;
+        } | 
+        ε { _Term.v = _Term.h; }
+
+Factor -> ( Expr ) { Factor.v = Expr.v }
+
+Factor -> 
+        - Factor 
+        { 
+            GenererQuad(NEG, Factor.v,, TEMP_i); 
+            i++;
+            Factor.v = - Factor.v;
+        }
+
+Factor -> + Factor { Factor.v = Factor.v; }
+
+Factor -> identifier { Factor.v = identifier.v; }
+
+Factor -> number { Factor.v = number.v; }
