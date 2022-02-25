@@ -21,7 +21,11 @@ PARSER_END(MiniC)
 
 /** Lexical analyzer **/
 
-SKIP : {
+TOKEN_MGR_DECLS : {
+    static String tmp_id;
+}
+
+<*> SKIP : {
     " " |
     "\t" |
     "\n" |
@@ -29,15 +33,45 @@ SKIP : {
     "\f"
 }
 
-TOKEN : {
+<DEFAULT> TOKEN : {
+    <ASSIGN: "="> |
+    <EQUAL: "=="> |
     <IF: "if"> |
     <INT: "int"> |
     <FOR: "for"> |
     <FLOAT: "float"> |
     <ELSE: "else"> |
     <WHILE: "while"> |
-    <ID: ["a"-"z", "A"-"Z", "_"](["a"-"z", "A"-"Z", "_", "0"-"9"])*> |
     <NUMBER: (["0"-"9"])*["."](["0"-"9"])+ | (["0"-"9"])+>
+}
+
+<DEFAULT> MORE : {
+    <["a"-"z", "A"-"Z", "_"](["a"-"z", "A"-"Z", "_", "0"-"9"])*>
+    { tmp_id = image.toString(); } : HANDLE_AMBIGUITY
+}
+
+<HANDLE_AMBIGUITY> TOKEN : {
+    <AFF: "="> { matchedToken.image = tmp_id; } : GENERATE_ASSIGN
+}
+
+<GENERATE_ASSIGN> TOKEN : {
+    "" { matchedToken.kind = ASSIGN; matchedToken.image = "="; } : DEFAULT
+}
+
+<HANDLE_AMBIGUITY> SPECIAL_TOKEN : {
+    "==" : GENERATE_ID
+}
+
+<HANDLE_AMBIGUITY> TOKEN : {
+    <ID: ""> {matchedToken.image = tmp_id; } : DEFAULT
+}
+
+<GENERATE_ID> TOKEN : {
+    "" {matchedToken.kind = ID; matchedToken.image = tmp_id; } : GENERATE_EQUAL
+}
+
+<GENERATE_EQUAL> TOKEN : {
+    "" { matchedToken.kind = EQUAL; matchedToken.image = "=="; } : DEFAULT
 }
 
 /** Root production. */
@@ -137,7 +171,7 @@ void _StmtList() : {}
 
 void Expr() : {}
 {
-    LOOKAHEAD(2) <ID> "=" Expr() | Rvalue()
+    <AFF> <ASSIGN> Expr() | Rvalue()
 }
 
 void Rvalue() : {}
@@ -152,7 +186,7 @@ void _Rvalue() : {}
 
 void Compare() : {}
 {
-    "==" | "<" | ">" | "<=" | ">=" | "!="
+    <EQUAL> | "<" | ">" | "<=" | ">=" | "!="
 }
 
 void Mag() : {}
