@@ -9,7 +9,7 @@ public class MiniC/*@bgen(jjtree)*/implements MiniCTreeConstants/*@egen*/ {/*@bg
     public static void main(String args[]) {
         MiniC parser = new MiniC(System.in);
         try {
-            SimpleNode n = parser.Function();
+            SimpleNode n = parser.Z();
             n.dump("");
             System.out.println("Thank you.");
         }
@@ -27,32 +27,34 @@ PARSER_END(MiniC)
 
 SKIP : {
     " " |
-    "\r" |
+    "\t" |
     "\n" |
-    "\r\n"
+    "\r" |
+    "\f"
 }
 
 TOKEN : {
-    <INT: "int"> |
-    <FLOAT: "float"> |
     <IF: "if"> |
+    <INT: "int"> |
+    <FOR: "for"> |
+    <FLOAT: "float"> |
     <ELSE: "else"> |
     <WHILE: "while"> |
-    <FOR: "for"> |
     <ID: ["a"-"z", "A"-"Z", "_"](["a"-"z", "A"-"Z", "_", "0"-"9"])*> |
     <NUMBER: (["0"-"9"])*["."](["0"-"9"])+ | (["0"-"9"])+>
 }
 
 /** Root production. */
-SimpleNode Function() : {/*@bgen(jjtree) Function */
-  SimpleNode jjtn000 = new SimpleNode(JJTFUNCTION);
+
+SimpleNode Z() : {/*@bgen(jjtree) Z */
+  SimpleNode jjtn000 = new SimpleNode(JJTZ);
   boolean jjtc000 = true;
   jjtree.openNodeScope(jjtn000);
 /*@egen*/}
-{/*@bgen(jjtree) Function */
+{/*@bgen(jjtree) Z */
     try {
 /*@egen*/
-    Type() <ID> "(" ArgList() ")" CompoundStmt() <EOF>/*@bgen(jjtree)*/
+    Function() <EOF>/*@bgen(jjtree)*/
     {
       jjtree.closeNodeScope(jjtn000, true);
       jjtc000 = false;
@@ -61,6 +63,37 @@ SimpleNode Function() : {/*@bgen(jjtree) Function */
     {
         return jjtn000;
     }/*@bgen(jjtree)*/
+    } catch (Throwable jjte000) {
+      if (jjtc000) {
+        jjtree.clearNodeScope(jjtn000);
+        jjtc000 = false;
+      } else {
+        jjtree.popNode();
+      }
+      if (jjte000 instanceof RuntimeException) {
+        throw (RuntimeException)jjte000;
+      }
+      if (jjte000 instanceof ParseException) {
+        throw (ParseException)jjte000;
+      }
+      throw (Error)jjte000;
+    } finally {
+      if (jjtc000) {
+        jjtree.closeNodeScope(jjtn000, true);
+      }
+    }
+/*@egen*/
+}
+
+void Function() : {/*@bgen(jjtree) Function */
+  SimpleNode jjtn000 = new SimpleNode(JJTFUNCTION);
+  boolean jjtc000 = true;
+  jjtree.openNodeScope(jjtn000);
+/*@egen*/}
+{/*@bgen(jjtree) Function */
+    try {
+/*@egen*/
+    Type() <ID> "(" ArgList() ")" CompoundStmt()/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
@@ -334,14 +367,25 @@ void Stmt() : {/*@bgen(jjtree) Stmt */
 }
 
 void ForStmt() : {/*@bgen(jjtree) ForStmt */
-  SimpleNode jjtn000 = new SimpleNode(JJTFORSTMT);
-  boolean jjtc000 = true;
-  jjtree.openNodeScope(jjtn000);
-/*@egen*/}
+    SimpleNode jjtn000 = new SimpleNode(JJTFORSTMT);
+    boolean jjtc000 = true;
+    jjtree.openNodeScope(jjtn000);
+/*@egen*/
+    int label = 0;
+}
 {/*@bgen(jjtree) ForStmt */
     try {
 /*@egen*/
     <FOR> "(" Expr() ";" OptExpr() ";" OptExpr() ")" Stmt()/*@bgen(jjtree)*/
+    {
+      jjtree.closeNodeScope(jjtn000, true);
+      jjtc000 = false;
+    }
+/*@egen*/
+    {
+        label ++;
+        System.out.println(label);
+    }/*@bgen(jjtree)*/
     } catch (Throwable jjte000) {
       if (jjtc000) {
         jjtree.clearNodeScope(jjtn000);
