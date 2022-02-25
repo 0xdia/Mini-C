@@ -23,9 +23,10 @@ PARSER_END(MiniC)
 
 SKIP : {
     " " |
-    "\r" |
+    "\t" |
     "\n" |
-    "\r\n"
+    "\r" |
+    "\f"
 }
 
 TOKEN : {
