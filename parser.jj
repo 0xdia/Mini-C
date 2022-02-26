@@ -1,0 +1,516 @@
+options {
+    ERROR_REPORTING = true;
+    LOOKAHEAD = 1;
+}
+
+PARSER_BEGIN(MiniC)
+
+import java.io.*;
+
+public class MiniC {
+
+    static int ifLbl = 0;
+    static int forLbl = 0;
+    static int whileLbl = 0;
+    static int cmpLbl = 0;
+    static int i = 0;
+
+    public static void main(String args[]) {
+        if (args.length < 1) {
+            System.out.println("MiniC: erreur fatale: pas de fichiers en entrée");
+            System.exit(1);
+        }
+        FileInputStream inputFile = null;
+        try {
+            inputFile = new FileInputStream(args[0]);    
+        } 
+        catch (FileNotFoundException e) {
+            System.out.printf("MiniC: erreur fatale: %s: ce fichier n'existe pas\n", args[0]);
+            System.exit(1);
+        }
+        MiniC parser = new MiniC(inputFile);
+        try {
+            parser.Z();
+            System.out.println("compilation terminée.");
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+        }
+        try {
+            inputFile.close();
+        }
+        catch (IOException e) {
+            System.out.println(e.getMessage());
+        } 
+    }
+
+    static void genQuad(String opc, String src1, String src, String des) {
+        System.out.printf("(%s %s %s %s)\n", opc, src1, src, des);
+    }
+
+    static void genLbl(String lbl) { 
+        System.out.printf("%s: ", lbl);
+    }
+}
+
+PARSER_END(MiniC)
+
+/** Lexical analyzer **/
+
+TOKEN_MGR_DECLS : {
+    static String tmp_id;
+}
+
+<*> SKIP : {
+    " " |
+    "\t" |
+    "\n" |
+    "\r" |
+    "\f"
+}
+
+<DEFAULT> TOKEN : {
+    <ASSIGN: "="> |
+    <LESS: "<"> |
+    <GREATER: ">"> |
+    <LESSEQ: "<="> |
+    <GREATEREQ: ">="> |
+    <NEQUAL: "!="> |
+    <EQUAL: "=="> |
+    <IF: "if"> |
+    <INT: "int"> |
+    <FOR: "for"> |
+    <FLOAT: "float"> |
+    <ELSE: "else"> |
+    <WHILE: "while"> |
+    <NUMBER: (["0"-"9"])*["."](["0"-"9"])+ | (["0"-"9"])+>
+}
+
+<DEFAULT> MORE : {
+    <["a"-"z", "A"-"Z", "_"](["a"-"z", "A"-"Z", "_", "0"-"9"])*>
+    { tmp_id = image.toString(); } : HANDLE_AMBIGUITY
+}
+
+<HANDLE_AMBIGUITY> TOKEN : {
+    <AFF: "="> { matchedToken.image = tmp_id; } : GENERATE_ASSIGN
+}
+
+<GENERATE_ASSIGN> TOKEN : {
+    "" { matchedToken.kind = ASSIGN; matchedToken.image = "="; } : DEFAULT
+}
+
+<HANDLE_AMBIGUITY> SPECIAL_TOKEN : {
+    "==" : GENERATE_ID
+}
+
+<HANDLE_AMBIGUITY> TOKEN : {
+    <ID: ""> {matchedToken.image = tmp_id; } : DEFAULT
+}
+
+<GENERATE_ID> TOKEN : {
+    "" {matchedToken.kind = ID; matchedToken.image = tmp_id; } : GENERATE_EQUAL
+}
+
+<GENERATE_EQUAL> TOKEN : {
+    "" { matchedToken.kind = EQUAL; matchedToken.image = "=="; } : DEFAULT
+}
+
+/** Root production. */
+
+void Z() : {}
+{
+    Function() <EOF>
+    {
+        genQuad("HALT", "_", "_", "_");
+    }
+}
+
+void Function() : {}
+{
+    Type() <ID> "(" ArgList() ")" CompoundStmt()
+}
+
+void ArgList() : {}
+{
+    Arg() _ArgList()
+}
+
+void _ArgList() : {}
+{
+    "," Arg() _ArgList() | {}
+}
+
+void Arg() : {}
+{
+    Type() <ID>
+}
+
+void Declaration() : {}
+{
+    Type() IdentList() ";"
+}
+
+void Type() : {}
+{
+    <INT> | <FLOAT>
+}
+
+void IdentList() : {}
+{
+    <ID> _OrIdentList()
+}
+
+void _OrIdentList() : {}
+{
+    "," IdentList() | {}
+}
+
+void Stmt() : {}
+{
+    ForStmt() |
+    WhileStmt() |
+    Expr() ";" |
+    IfStmt() |
+    CompoundStmt() |
+    Declaration() |
+    ";"
+}
+
+void ForStmt() : {
+    String tmpOptExpr;
+    String lbl1, lbl2, lbl3, lbl4;
+}
+{
+    <FOR>
+    {
+        forLbl++;
+        lbl1 = String.format("FOR%d_LBL%d", forLbl, 1);
+        lbl2 = String.format("FOR%d_LBL%d", forLbl, 2);
+        lbl3 = String.format("FOR%d_LBL%d", forLbl, 3);
+        lbl4 = String.format("FOR%d_LBL%d", forLbl, 4);
+    }
+    "(" Expr() ";"
+    {
+        genLbl(lbl1);
+    }
+    tmpOptExpr = OptExpr()
+    {
+        genQuad("CMP", tmpOptExpr, "0", "_");
+        genQuad("JNE", "_", "_", lbl2);
+        genQuad("JMP", "_", "_", lbl3);
+        genLbl(lbl4);
+    }
+    ";" OptExpr()
+    {
+        genQuad("JMP", "_", "_", lbl1);
+        genLbl(lbl2);
+    }
+    ")" Stmt()
+    {
+        genQuad("JMP", "_", "_", lbl4);
+        genLbl(lbl3);
+    }
+}
+
+String OptExpr() : {
+    String tmpExpr;
+}
+{
+    tmpExpr = Expr()
+    {
+        return tmpExpr;
+    } |
+    {
+        return "";
+    }
+}
+
+void WhileStmt() : {
+    String lbl1, lbl2;
+    String tmpExpr;
+}
+{
+    <WHILE>
+    {
+        whileLbl++;
+        lbl1 = String.format("WHILE%d_LBL%d", whileLbl, 1);
+        lbl2 = String.format("WHILE%d_LBL%d", whileLbl, 2);
+        genLbl(lbl1);
+    }
+    "(" 
+    tmpExpr = Expr()
+    {
+        genQuad("CMP", tmpExpr, "0", "_");
+        genQuad("JE", "_", "_", lbl2);
+    }
+    ")" Stmt()
+    {
+        genQuad("JMP", "_", "_", lbl1);
+        genLbl(lbl2);
+    }
+}
+
+void IfStmt() : {
+    String lbl1, lbl2;
+    String tmpExpr;
+}
+{
+    <IF>
+    {
+        ifLbl ++;
+        lbl1 = String.format("IF%d_LBL%d", ifLbl, 1);
+        lbl2 = String.format("IF%d_LBL%d", ifLbl, 2);
+    }
+    "("
+    tmpExpr = Expr()
+    {
+        genQuad("CMP", tmpExpr, "0", "_");
+        genQuad("JE", "_", "_", lbl1);
+
+    }
+    ")" Stmt()
+    {
+        genQuad("JMP", "_", "_", lbl2);
+        genLbl(lbl1);
+    }
+    ElsePart()
+    {
+        genLbl(lbl2);
+    }
+}
+
+void ElsePart() : {}
+{
+    <ELSE> Stmt() | {}
+}
+
+void CompoundStmt() : {}
+{
+    "{" StmtList() "}"
+}
+
+void StmtList() : {}
+{
+    _StmtList()
+}
+
+void _StmtList() : {}
+{
+    Stmt() _StmtList() | {}
+}
+
+String Expr() : {
+    Token id;
+    String tmpExpr, tmpRvalue;
+}
+{
+    id = <AFF>
+    <ASSIGN>
+    tmpExpr = Expr()
+    {
+        genQuad("MOV", tmpExpr, "_", id.image);
+        return tmpExpr;
+    } |
+    tmpRvalue = Rvalue()
+    {
+        return tmpRvalue;
+    }
+}
+
+String Rvalue() : {
+    String tmpMag, tmp_Rvalue;
+}
+{
+    tmpMag = Mag()
+    tmp_Rvalue = _Rvalue(tmpMag)
+    {
+        return tmp_Rvalue;
+    }
+}
+
+String _Rvalue(String h) : {
+    String cmp, tmpMag;
+    String lbl1, lbl2;
+    String tmpVar;
+    String tmp_Rvalue;
+}
+{
+    cmp = Compare()
+    {
+        cmpLbl++;
+        lbl1 = String.format("CMP%d_LBL%d", cmpLbl, 1);
+        lbl2 = String.format("CMP%d_LBL%d", cmpLbl, 2);
+    }
+    tmpMag = Mag()
+    {
+        i++;
+        tmpVar = String.format("TMP_%d", i);
+        genQuad("MOV", "0", "_", tmpVar);
+        genQuad("CMP", h, tmpMag, "_");
+        switch(cmp) {
+            case "==":
+                genQuad("JE", "_", "_", lbl1);
+                break;
+            case "!=":
+                genQuad("JNE", "_", "_", lbl1);
+                break;
+            case "<":
+                genQuad("JL", "_", "_", lbl1);
+                break;
+            case "<=":
+                genQuad("JLE", "_", "_", lbl1);
+                break;
+            case ">":
+                genQuad("JG", "_", "_", lbl1);
+                break;
+            case ">=":
+                genQuad("JGE", "_", "_", lbl1);
+                break;
+            default: break;
+        }
+        genQuad("JMP", "_", "_", lbl2);
+        genLbl(lbl1);
+        genQuad("MOV", "1", "_", tmpVar);
+        genLbl(lbl2);
+    }
+    tmp_Rvalue = _Rvalue(tmpVar)
+    {
+        return tmp_Rvalue;
+    } |
+    {
+        return h;
+    }
+}
+
+String Compare() : {
+    Token t;
+}
+{
+    t = <EQUAL> { return t.image; } |
+    t = <LESS> { return t.image; } |
+    t = <GREATER> { return t.image; } |
+    t = <LESSEQ> { return t.image; } |
+    t = <GREATEREQ> { return t.image; } |
+    t = <NEQUAL> { return t.image; }
+}
+
+String Mag() : {
+    String tmpTerm, tmp_Mag;
+}
+{
+    tmpTerm = Term()
+    tmp_Mag = _Mag(tmpTerm)
+    {
+        return tmp_Mag;
+    }
+}
+
+String _Mag(String h) : {
+    String tmpTerm, tmp_Mag;
+    String tmpVar; 
+}
+{
+    "+"
+    tmpTerm = Term()
+    {
+        i++;
+        tmpVar = String.format("TMP_%d", i);
+        genQuad("ADD", h, tmpTerm, tmpVar);
+    }
+    tmp_Mag = _Mag(tmpVar)
+    {
+        return tmp_Mag;
+    } |
+    "-"
+    tmpTerm = Term()
+    {
+        i++;
+        tmpVar = String.format("TMP_%d", i);
+        genQuad("SUB", h, tmpTerm, tmpVar);
+    }
+    tmp_Mag = _Mag(tmpVar)
+    {
+        return tmp_Mag;
+    } |
+    {
+        return h;
+    }
+}
+
+String Term() : {
+    String tmpFactor, tmp_Term;
+}
+{
+    tmpFactor = Factor()
+    tmp_Term = _Term(tmpFactor)
+    {
+        return tmp_Term;
+    }
+}
+
+String _Term(String h) : {
+    String tmpFactor, tmp_Mag, tmp_Term;
+    String tmpVar; 
+}
+{
+    "*"
+    tmpFactor = Factor()
+    {
+        i++;
+        tmpVar = String.format("TMP_%d", i);
+        genQuad("MUL", h, tmpFactor, tmpVar);
+    }
+    tmp_Term = _Term(tmpVar)
+    {
+        return tmp_Term;
+    } |
+    "/"
+    tmpFactor = Factor()
+    {
+        i++;
+        tmpVar = String.format("TMP_%d", i);
+        genQuad("DIV", h, tmpFactor, tmpVar);
+    }
+    tmp_Term = _Term(tmpVar)
+    {
+        return tmp_Term;
+    } |
+    {
+        return h;
+    }
+}
+
+String Factor() : {
+    Token id, number;
+    String tmpExpr, tmpVar;
+}
+{
+    "("
+    tmpExpr =  Expr()
+    ")"
+    {
+        return tmpExpr;
+    } |
+    "+"
+    tmpExpr = Expr()
+    {
+        return tmpExpr;
+    } |
+    "-"
+    tmpExpr = Expr()
+    {
+        i++;
+        tmpVar = String.format("TMP_%d", i);
+        genQuad("NEG", tmpExpr, "_", tmpVar);
+        return tmpVar;
+    } |
+    id = <ID>
+    {
+        return id.image;
+    } |
+    number = <NUMBER>
+    {
+        return number.image;
+    }
+}
