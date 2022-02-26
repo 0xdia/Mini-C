@@ -7,7 +7,8 @@
 
 PARSER_BEGIN(MiniC)
 
-import java.io.StringReader;
+import java.io.*;
+import java.util.*;
 
 public class MiniC/*@bgen(jjtree)*/implements MiniCTreeConstants/*@egen*/ {/*@bgen(jjtree)*/
   protected static JJTMiniCState jjtree = new JJTMiniCState();
@@ -15,12 +16,20 @@ public class MiniC/*@bgen(jjtree)*/implements MiniCTreeConstants/*@egen*/ {/*@bg
 /*@egen*/
 
     public static void main(String args[]) {
-        if (args.length == 0) {
+        if (args.length < 1) {
             System.out.println("MiniC: erreur fatale: pas de fichier en entr\u00e9e");
-            return;
+            System.exit(1);
         }
 
-        MiniC parser = new MiniC(new java.io.StringReader(args[0]));
+        FileInputStream inputFile = null;
+        try {
+            inputFile = new FileInputStream(args[0]);    
+        } catch (FileNotFoundException e) {
+            System.out.println("MiniC: erreur: ce fichier n'existe pas");
+            System.exit(1);
+        }
+
+        MiniC parser = new MiniC(inputFile);
         try {
             SimpleNode n = parser.Z();
             n.dump("");
