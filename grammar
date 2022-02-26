@@ -115,18 +115,16 @@ Expr ->
 Rvalue -> Mag { _Rvalue.h = Mag.v } _Rvalue { Rvalue.v = _Rvalue.v }
 
 _Rvalue -> 
-        {
-            cmp_lbl++;
-        }
         Compare 
         {
+            cmp_lbl++;
             Mag.h = Compare.v;
         }
         Mag
         {
-            GenererQuad(MOV, 1, , TEMP_i);
-
-            GenererQuad(Mag.h, _Rvalue.h, Mag.v, TEMP_i);
+            i++;
+            GenererQuad(MOV, 0, , TEMP_i);
+            GenererQuad("CMP", _Rvalue.h, Mag.v, );
             
             if (Mag.h == "==")
                 GenererQuad(JE, , , COMP_cmp_lbl_LBL1);
@@ -142,14 +140,17 @@ _Rvalue ->
                 GenererQuad(JNE, , , COMP_cmp_lbl_LBL1);
             
             GenererQuad(MOV, 0, , TEMP_i);
+            GenererQuad(JMP, , , COMP_cmp_lbl_LBL2);
+
             _Rvalue1.h = TEMP_i;
-            i++;
 
             newLabel(COMP_cmp_lbl_LBL1);
+            GenererQuad(MOV, 1, , TEMP_i);
+            newLabel(COMP_cmp_lbl_LBL2);
         }
         _Rvalue1
         {
-            _Rvalue.v = _Rvalue1.h = _Rvalue1.h Compare.v _Rvalue1.v;
+            _Rvalue.v = _Rvalue1.v /* = _Rvalue1.h Compare.v _Rvalue1.v */;
         } |
         ε { _Rvalue.v = _Rvalue.h; }
 
@@ -170,9 +171,9 @@ _Mag ->
         }
         _Mag1
         {
-            _Mag.v = _Mag1.h + _Mag1.v; 
-            GenererQuad(ADD, _Mag1.v, _Mag1.h, TEMP_i);
+            _Mag.v = _Mag1.h + _Mag1.v;
             i++;
+            GenererQuad(ADD, _Mag1.v, _Mag1.h, TEMP_i);
         } | 
         - Term 
         {
@@ -180,11 +181,11 @@ _Mag ->
         }
         _Mag1
         {
-            _Mag.v = _Mag1.h - _Mag1.v; 
-            GenererQuad(SUB, _Mag.h, _Mag.v, TEMP_i);
+            _Mag.v = _Mag1.h - _Mag1.v;
             i++;
+            GenererQuad(SUB, _Mag.h, _Mag.v, TEMP_i);
         } | 
-        ε { _Mag.v = _Mag.v; }
+        ε { _Mag.v = _Mag.h; }
 
 Term -> Factor { _Term.h = Factor.v; } _Term { Term.v = _Term.v; }
 
@@ -216,8 +217,8 @@ Factor -> ( Expr ) { Factor.v = Expr.v }
 Factor -> 
         - Factor 
         { 
-            GenererQuad(NEG, Factor.v,, TEMP_i); 
             i++;
+            GenererQuad(NEG, Factor.v,, TEMP_i); 
             Factor.v = - Factor.v;
         }
 
