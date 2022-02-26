@@ -1,4 +1,13 @@
+options {
+    BUILD_TOKEN_MANAGER = true;
+    ERROR_REPORTING = true;
+    LOOKAHEAD = 1;
+}
+
 PARSER_BEGIN(MiniC)
+
+import java.io.*;
+import java.util.*;
 
 public class MiniC {
 
@@ -9,7 +18,20 @@ public class MiniC {
     static int i = 0;
 
     public static void main(String args[]) {
-        MiniC parser = new MiniC(System.in);
+        if (args.length < 1) {
+            System.out.println("MiniC: erreur fatale: pas de fichier en entrée");
+            System.exit(1);
+        }
+
+        FileInputStream inputFile = null;
+        try {
+            inputFile = new FileInputStream(args[0]);    
+        } catch (FileNotFoundException e) {
+            System.out.println("MiniC: erreur: ce fichier n'existe pas");
+            System.exit(1);
+        }
+
+        MiniC parser = new MiniC(inputFile);
         try {
             //SimpleNode n = parser.Z();
             //n.dump("");
