@@ -1,9 +1,16 @@
 PARSER_BEGIN(MiniC)
 
+import java.io.StringReader;
+
 public class MiniC {
 
     public static void main(String args[]) {
-        MiniC parser = new MiniC(System.in);
+        if (args.length == 0) {
+            System.out.println("MiniC: erreur fatale: pas de fichier en entrée");
+            return;
+        }
+
+        MiniC parser = new MiniC(new java.io.StringReader(args[0]));
         try {
             SimpleNode n = parser.Function();
             n.dump("");
