@@ -1,3 +1,9 @@
+options {
+    BUILD_TOKEN_MANAGER = true;
+    ERROR_REPORTING = true;
+    LOOKAHEAD = 1;
+}
+
 PARSER_BEGIN(MiniC)
 
 import java.io.StringReader;
