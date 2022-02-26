@@ -18,7 +18,7 @@ public class MiniC {
 
         MiniC parser = new MiniC(new java.io.StringReader(args[0]));
         try {
-            SimpleNode n = parser.Function();
+            SimpleNode n = parser.Z();
             n.dump("");
             System.out.println("Thank you.");
         }
@@ -54,12 +54,18 @@ TOKEN : {
 }
 
 /** Root production. */
-SimpleNode Function() : {}
+
+SimpleNode Z() : {}
 {
-    Type() <ID> "(" ArgList() ")" CompoundStmt() <EOF>
+    Function() <EOF>
     {
         return jjtThis;
     }
+}
+
+void Function() : {}
+{
+    Type() <ID> "(" ArgList() ")" CompoundStmt()
 }
 
 void ArgList() : {}
@@ -108,9 +114,15 @@ void Stmt() : {}
     ";"
 }
 
-void ForStmt() : {}
+void ForStmt() : {
+    int label = 0;
+}
 {
     <FOR> "(" Expr() ";" OptExpr() ";" OptExpr() ")" Stmt()
+    {
+        label ++;
+        System.out.println(label);
+    }
 }
 
 void OptExpr() : {}
