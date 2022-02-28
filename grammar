@@ -101,11 +101,11 @@ StmtList -> _StmtList
 _StmtList -> Stmt _StmtList | ε
 
 Expr -> 
-        identifier = Expr1 
+        assign_identifier = Expr1 
         { 
-            identifier.v = Expr1.v;
-            Expr.v = identifier.v; 
-            GenererQuad(MOV, Expr1.v,, identifier.v);
+            assign_identifier.v = Expr1.v;
+            Expr.v = assign_identifier.v; 
+            GenererQuad(MOV, Expr1.v,, assign_identifier.v);
         } | 
         Rvalue
         {
