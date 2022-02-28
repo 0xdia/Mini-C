@@ -486,7 +486,7 @@ String _Term(String h) : {
 
 String Factor() : {
     Token id, number;
-    String tmpExpr, tmpVar;
+    String tmpExpr, tmpFactor, tmpVar;
 }
 {
     "("
@@ -496,16 +496,16 @@ String Factor() : {
         return tmpExpr;
     } |
     "+"
-    tmpExpr = Expr()
+    tmpFactor = Factor()
     {
-        return tmpExpr;
+        return tmpFactor;
     } |
     "-"
-    tmpExpr = Expr()
+    tmpFactor = Factor()
     {
         i++;
         tmpVar = String.format("TMP_%d", i);
-        genQuad("NEG", tmpExpr, EMPTY_ARG, tmpVar);
+        genQuad("NEG", tmpFactor, EMPTY_ARG, tmpVar);
         return tmpVar;
     } |
     id = <IDENTIFIER>
