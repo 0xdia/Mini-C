@@ -62,12 +62,13 @@ TOKEN_MGR_DECLS : {
     static String tmp_id;
 }
 
-<*> SKIP : {
+<DEFAULT, HANDLE_AMBIGUITY> SKIP : {
     " " |
     "\t" |
     "\n" |
     "\r" |
-    "\f"
+    <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> |
+    <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
 
 <DEFAULT> TOKEN : {
