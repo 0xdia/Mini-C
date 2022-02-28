@@ -167,23 +167,23 @@ Mag -> Term { _Mag.h = Term.v; } _Mag { Mag.v = _Mag.v; }
 _Mag -> 
         + Term 
         {
-            _Mag1.h = Term.v;
+            _Mag1.h = _Mag.h + Term.v;
         }
         _Mag1
         {
             _Mag.v = _Mag1.h + _Mag1.v;
             i++;
-            GenererQuad(ADD, _Mag1.v, _Mag1.h, TEMP_i);
+            GenererQuad(ADD, _Mag1.h, _Mag1.v, TEMP_i);
         } | 
         - Term 
         {
-            _Mag1.h = Term.v;
+            _Mag1.h = _Mag.h - Term.v;
         }
         _Mag1
         {
             _Mag.v = _Mag1.h - _Mag1.v;
             i++;
-            GenererQuad(SUB, _Mag.h, _Mag.v, TEMP_i);
+            GenererQuad(SUB, _Mag1.h, _Mag1.v, TEMP_i);
         } | 
         ε { _Mag.v = _Mag.h; }
 
@@ -192,7 +192,7 @@ Term -> Factor { _Term.h = Factor.v; } _Term { Term.v = _Term.v; }
 _Term -> 
         * Factor 
         {
-            _Term1.h = Factor.v * _Term.h;
+            _Term1.h = _Term.h * Factor.v;
         }
         _Term1
         {
@@ -202,7 +202,7 @@ _Term ->
         } |
         / Factor
         {
-            _Term1.h = Factor.v;
+            _Term1.h = _Term.h / Factor.v;
         }
         _Term1
         {
