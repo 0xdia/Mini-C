@@ -9,6 +9,8 @@ import java.io.*;
 
 public class MiniC {
 
+    private static final String EMPTY_ARG = ".";
+
     static int ifLbl = 0;
     static int forLbl = 0;
     static int whileLbl = 0;
@@ -94,23 +96,23 @@ TOKEN_MGR_DECLS : {
 }
 
 <HANDLE_AMBIGUITY> TOKEN : {
-    <AFF: "="> { matchedToken.image = tmp_id; } : GENERATE_ASSIGN
+    <ASSIGN_IDENTIFIER: "="> { matchedToken.image = tmp_id; } : GENERATE_ASSIGN
+}
+
+<HANDLE_AMBIGUITY> MORE : {
+    "==" : GENERATE_ID
+}
+
+<HANDLE_AMBIGUITY> TOKEN : {
+    <IDENTIFIER: ""> {matchedToken.image = tmp_id; } : DEFAULT
 }
 
 <GENERATE_ASSIGN> TOKEN : {
     "" { matchedToken.kind = ASSIGN; matchedToken.image = "="; } : DEFAULT
 }
 
-<HANDLE_AMBIGUITY> SPECIAL_TOKEN : {
-    "==" : GENERATE_ID
-}
-
-<HANDLE_AMBIGUITY> TOKEN : {
-    <ID: ""> {matchedToken.image = tmp_id; } : DEFAULT
-}
-
 <GENERATE_ID> TOKEN : {
-    "" {matchedToken.kind = ID; matchedToken.image = tmp_id; } : GENERATE_EQUAL
+    "" {matchedToken.kind = IDENTIFIER; matchedToken.image = tmp_id; } : GENERATE_EQUAL
 }
 
 <GENERATE_EQUAL> TOKEN : {
@@ -123,13 +125,13 @@ void Z() : {}
 {
     Function() <EOF>
     {
-        genQuad("HALT", "_", "_", "_");
+        genQuad("HALT", EMPTY_ARG, EMPTY_ARG, EMPTY_ARG);
     }
 }
 
 void Function() : {}
 {
-    Type() <ID> "(" ArgList() ")" CompoundStmt()
+    Type() <IDENTIFIER> "(" ArgList() ")" CompoundStmt()
 }
 
 void ArgList() : {}
@@ -144,7 +146,7 @@ void _ArgList() : {}
 
 void Arg() : {}
 {
-    Type() <ID>
+    Type() <IDENTIFIER>
 }
 
 void Declaration() : {}
@@ -159,7 +161,7 @@ void Type() : {}
 
 void IdentList() : {}
 {
-    <ID> _OrIdentList()
+    <IDENTIFIER> _OrIdentList()
 }
 
 void _OrIdentList() : {}
@@ -197,19 +199,19 @@ void ForStmt() : {
     }
     tmpOptExpr = OptExpr()
     {
-        genQuad("CMP", tmpOptExpr, "0", "_");
-        genQuad("JNE", "_", "_", lbl2);
-        genQuad("JMP", "_", "_", lbl3);
+        genQuad("CMP", tmpOptExpr, "0", EMPTY_ARG);
+        genQuad("JNE", EMPTY_ARG, EMPTY_ARG, lbl2);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl3);
         genLbl(lbl4);
     }
     ";" OptExpr()
     {
-        genQuad("JMP", "_", "_", lbl1);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl1);
         genLbl(lbl2);
     }
     ")" Stmt()
     {
-        genQuad("JMP", "_", "_", lbl4);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl4);
         genLbl(lbl3);
     }
 }
@@ -242,12 +244,12 @@ void WhileStmt() : {
     "(" 
     tmpExpr = Expr()
     {
-        genQuad("CMP", tmpExpr, "0", "_");
-        genQuad("JE", "_", "_", lbl2);
+        genQuad("CMP", tmpExpr, "0", EMPTY_ARG);
+        genQuad("JE", EMPTY_ARG, EMPTY_ARG, lbl2);
     }
     ")" Stmt()
     {
-        genQuad("JMP", "_", "_", lbl1);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl1);
         genLbl(lbl2);
     }
 }
@@ -266,13 +268,13 @@ void IfStmt() : {
     "("
     tmpExpr = Expr()
     {
-        genQuad("CMP", tmpExpr, "0", "_");
-        genQuad("JE", "_", "_", lbl1);
+        genQuad("CMP", tmpExpr, "0", EMPTY_ARG);
+        genQuad("JE", EMPTY_ARG, EMPTY_ARG, lbl1);
 
     }
     ")" Stmt()
     {
-        genQuad("JMP", "_", "_", lbl2);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl2);
         genLbl(lbl1);
     }
     ElsePart()
@@ -306,11 +308,11 @@ String Expr() : {
     String tmpExpr, tmpRvalue;
 }
 {
-    id = <AFF>
+    id = <ASSIGN_IDENTIFIER>
     <ASSIGN>
     tmpExpr = Expr()
     {
-        genQuad("MOV", tmpExpr, "_", id.image);
+        genQuad("MOV", tmpExpr, EMPTY_ARG, id.image);
         return tmpExpr;
     } |
     tmpRvalue = Rvalue()
@@ -347,32 +349,32 @@ String _Rvalue(String h) : {
     {
         i++;
         tmpVar = String.format("TMP_%d", i);
-        genQuad("MOV", "0", "_", tmpVar);
-        genQuad("CMP", h, tmpMag, "_");
+        genQuad("MOV", "0", EMPTY_ARG, tmpVar);
+        genQuad("CMP", h, tmpMag, EMPTY_ARG);
         switch(cmp) {
             case "==":
-                genQuad("JE", "_", "_", lbl1);
+                genQuad("JE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case "!=":
-                genQuad("JNE", "_", "_", lbl1);
+                genQuad("JNE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case "<":
-                genQuad("JL", "_", "_", lbl1);
+                genQuad("JL", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case "<=":
-                genQuad("JLE", "_", "_", lbl1);
+                genQuad("JLE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case ">":
-                genQuad("JG", "_", "_", lbl1);
+                genQuad("JG", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case ">=":
-                genQuad("JGE", "_", "_", lbl1);
+                genQuad("JGE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             default: break;
         }
-        genQuad("JMP", "_", "_", lbl2);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl2);
         genLbl(lbl1);
-        genQuad("MOV", "1", "_", tmpVar);
+        genQuad("MOV", "1", EMPTY_ARG, tmpVar);
         genLbl(lbl2);
     }
     tmp_Rvalue = _Rvalue(tmpVar)
@@ -503,10 +505,10 @@ String Factor() : {
     {
         i++;
         tmpVar = String.format("TMP_%d", i);
-        genQuad("NEG", tmpExpr, "_", tmpVar);
+        genQuad("NEG", tmpExpr, EMPTY_ARG, tmpVar);
         return tmpVar;
     } |
-    id = <ID>
+    id = <IDENTIFIER>
     {
         return id.image;
     } |
