@@ -17,6 +17,8 @@ public class MiniC {
     static int cmpLbl = 0;
     static int i = 0;
 
+    static PrintWriter out;
+
     public static void main(String args[]) {
         if (args.length < 1) {
             System.out.println("MiniC: erreur fatale: pas de fichiers en entrée");
@@ -30,29 +32,30 @@ public class MiniC {
             System.out.printf("MiniC: erreur fatale: %s: ce fichier n'existe pas\n", args[0]);
             System.exit(1);
         }
+        String outFileName = "out.txt";
+        if (args.length > 1) {
+            outFileName = args[1];
+        }
         MiniC parser = new MiniC(inputFile);
         try {
+            out = new PrintWriter(new FileWriter(outFileName));
             parser.Z();
             System.out.println("compilation terminée.");
+            inputFile.close();
+            out.close();
         }
         catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-        try {
-            inputFile.close();
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        } 
     }
 
     static void genQuad(String opc, String src1, String src, String des) {
-        System.out.printf("(%s %s %s %s)\n", opc, src1, src, des);
+        out.printf("(%s %s %s %s)\n", opc, src1, src, des);
     }
 
     static void genLbl(String lbl) { 
-        System.out.printf("%s: ", lbl);
+        out.printf("%s: ", lbl);
     }
 }
 
