@@ -9,11 +9,15 @@ import java.io.*;
 
 public class MiniC {
 
+    private static final String EMPTY_ARG = ".";
+
     static int ifLbl = 0;
     static int forLbl = 0;
     static int whileLbl = 0;
     static int cmpLbl = 0;
     static int i = 0;
+
+    static PrintWriter out;
 
     public static void main(String args[]) {
         if (args.length < 1) {
@@ -28,29 +32,30 @@ public class MiniC {
             System.out.printf("MiniC: erreur fatale: %s: ce fichier n'existe pas\n", args[0]);
             System.exit(1);
         }
+        String outFileName = "out.txt";
+        if (args.length > 1) {
+            outFileName = args[1];
+        }
         MiniC parser = new MiniC(inputFile);
         try {
+            out = new PrintWriter(new FileWriter(outFileName));
             parser.Z();
             System.out.println("compilation terminée.");
+            inputFile.close();
+            out.close();
         }
         catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
         }
-        try {
-            inputFile.close();
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        } 
     }
 
     static void genQuad(String opc, String src1, String src, String des) {
-        System.out.printf("(%s %s %s %s)\n", opc, src1, src, des);
+        out.printf("(%s %s %s %s)\n", opc, src1, src, des);
     }
 
     static void genLbl(String lbl) { 
-        System.out.printf("%s: ", lbl);
+        out.printf("%s: ", lbl);
     }
 }
 
@@ -62,12 +67,13 @@ TOKEN_MGR_DECLS : {
     static String tmp_id;
 }
 
-<*> SKIP : {
+<DEFAULT, HANDLE_AMBIGUITY> SKIP : {
     " " |
     "\t" |
     "\n" |
     "\r" |
-    "\f"
+    <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")> |
+    <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
 }
 
 <DEFAULT> TOKEN : {
@@ -84,7 +90,7 @@ TOKEN_MGR_DECLS : {
     <FLOAT: "float"> |
     <ELSE: "else"> |
     <WHILE: "while"> |
-    <NUMBER: (["0"-"9"])*["."](["0"-"9"])+ | (["0"-"9"])+>
+    <NUMBER: ((["0"-"9"])+("."(["0"-"9"])+)? | "."(["0"-"9"])+)(["e", "E"](["+", "-"])?(["0"-"9"])+)?>
 }
 
 <DEFAULT> MORE : {
@@ -93,23 +99,23 @@ TOKEN_MGR_DECLS : {
 }
 
 <HANDLE_AMBIGUITY> TOKEN : {
-    <AFF: "="> { matchedToken.image = tmp_id; } : GENERATE_ASSIGN
+    <ASSIGN_IDENTIFIER: "="> { matchedToken.image = tmp_id; } : GENERATE_ASSIGN
+}
+
+<HANDLE_AMBIGUITY> MORE : {
+    "==" : GENERATE_ID
+}
+
+<HANDLE_AMBIGUITY> TOKEN : {
+    <IDENTIFIER: ""> {matchedToken.image = tmp_id; } : DEFAULT
 }
 
 <GENERATE_ASSIGN> TOKEN : {
     "" { matchedToken.kind = ASSIGN; matchedToken.image = "="; } : DEFAULT
 }
 
-<HANDLE_AMBIGUITY> SPECIAL_TOKEN : {
-    "==" : GENERATE_ID
-}
-
-<HANDLE_AMBIGUITY> TOKEN : {
-    <ID: ""> {matchedToken.image = tmp_id; } : DEFAULT
-}
-
 <GENERATE_ID> TOKEN : {
-    "" {matchedToken.kind = ID; matchedToken.image = tmp_id; } : GENERATE_EQUAL
+    "" {matchedToken.kind = IDENTIFIER; matchedToken.image = tmp_id; } : GENERATE_EQUAL
 }
 
 <GENERATE_EQUAL> TOKEN : {
@@ -122,13 +128,13 @@ void Z() : {}
 {
     Function() <EOF>
     {
-        genQuad("HALT", "_", "_", "_");
+        genQuad("HALT", EMPTY_ARG, EMPTY_ARG, EMPTY_ARG);
     }
 }
 
 void Function() : {}
 {
-    Type() <ID> "(" ArgList() ")" CompoundStmt()
+    Type() <IDENTIFIER> "(" ArgList() ")" CompoundStmt()
 }
 
 void ArgList() : {}
@@ -143,7 +149,7 @@ void _ArgList() : {}
 
 void Arg() : {}
 {
-    Type() <ID>
+    Type() <IDENTIFIER>
 }
 
 void Declaration() : {}
@@ -158,7 +164,7 @@ void Type() : {}
 
 void IdentList() : {}
 {
-    <ID> _OrIdentList()
+    <IDENTIFIER> _OrIdentList()
 }
 
 void _OrIdentList() : {}
@@ -196,19 +202,19 @@ void ForStmt() : {
     }
     tmpOptExpr = OptExpr()
     {
-        genQuad("CMP", tmpOptExpr, "0", "_");
-        genQuad("JNE", "_", "_", lbl2);
-        genQuad("JMP", "_", "_", lbl3);
+        genQuad("CMP", tmpOptExpr, "0", EMPTY_ARG);
+        genQuad("JNE", EMPTY_ARG, EMPTY_ARG, lbl2);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl3);
         genLbl(lbl4);
     }
     ";" OptExpr()
     {
-        genQuad("JMP", "_", "_", lbl1);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl1);
         genLbl(lbl2);
     }
     ")" Stmt()
     {
-        genQuad("JMP", "_", "_", lbl4);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl4);
         genLbl(lbl3);
     }
 }
@@ -241,12 +247,12 @@ void WhileStmt() : {
     "(" 
     tmpExpr = Expr()
     {
-        genQuad("CMP", tmpExpr, "0", "_");
-        genQuad("JE", "_", "_", lbl2);
+        genQuad("CMP", tmpExpr, "0", EMPTY_ARG);
+        genQuad("JE", EMPTY_ARG, EMPTY_ARG, lbl2);
     }
     ")" Stmt()
     {
-        genQuad("JMP", "_", "_", lbl1);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl1);
         genLbl(lbl2);
     }
 }
@@ -265,13 +271,13 @@ void IfStmt() : {
     "("
     tmpExpr = Expr()
     {
-        genQuad("CMP", tmpExpr, "0", "_");
-        genQuad("JE", "_", "_", lbl1);
+        genQuad("CMP", tmpExpr, "0", EMPTY_ARG);
+        genQuad("JE", EMPTY_ARG, EMPTY_ARG, lbl1);
 
     }
     ")" Stmt()
     {
-        genQuad("JMP", "_", "_", lbl2);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl2);
         genLbl(lbl1);
     }
     ElsePart()
@@ -305,11 +311,11 @@ String Expr() : {
     String tmpExpr, tmpRvalue;
 }
 {
-    id = <AFF>
+    id = <ASSIGN_IDENTIFIER>
     <ASSIGN>
     tmpExpr = Expr()
     {
-        genQuad("MOV", tmpExpr, "_", id.image);
+        genQuad("MOV", tmpExpr, EMPTY_ARG, id.image);
         return tmpExpr;
     } |
     tmpRvalue = Rvalue()
@@ -346,32 +352,32 @@ String _Rvalue(String h) : {
     {
         i++;
         tmpVar = String.format("TMP_%d", i);
-        genQuad("MOV", "0", "_", tmpVar);
-        genQuad("CMP", h, tmpMag, "_");
+        genQuad("MOV", "0", EMPTY_ARG, tmpVar);
+        genQuad("CMP", h, tmpMag, EMPTY_ARG);
         switch(cmp) {
             case "==":
-                genQuad("JE", "_", "_", lbl1);
+                genQuad("JE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case "!=":
-                genQuad("JNE", "_", "_", lbl1);
+                genQuad("JNE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case "<":
-                genQuad("JL", "_", "_", lbl1);
+                genQuad("JL", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case "<=":
-                genQuad("JLE", "_", "_", lbl1);
+                genQuad("JLE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case ">":
-                genQuad("JG", "_", "_", lbl1);
+                genQuad("JG", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             case ">=":
-                genQuad("JGE", "_", "_", lbl1);
+                genQuad("JGE", EMPTY_ARG, EMPTY_ARG, lbl1);
                 break;
             default: break;
         }
-        genQuad("JMP", "_", "_", lbl2);
+        genQuad("JMP", EMPTY_ARG, EMPTY_ARG, lbl2);
         genLbl(lbl1);
-        genQuad("MOV", "1", "_", tmpVar);
+        genQuad("MOV", "1", EMPTY_ARG, tmpVar);
         genLbl(lbl2);
     }
     tmp_Rvalue = _Rvalue(tmpVar)
@@ -483,7 +489,7 @@ String _Term(String h) : {
 
 String Factor() : {
     Token id, number;
-    String tmpExpr, tmpVar;
+    String tmpExpr, tmpFactor, tmpVar;
 }
 {
     "("
@@ -493,19 +499,19 @@ String Factor() : {
         return tmpExpr;
     } |
     "+"
-    tmpExpr = Expr()
+    tmpFactor = Factor()
     {
-        return tmpExpr;
+        return tmpFactor;
     } |
     "-"
-    tmpExpr = Expr()
+    tmpFactor = Factor()
     {
         i++;
         tmpVar = String.format("TMP_%d", i);
-        genQuad("NEG", tmpExpr, "_", tmpVar);
+        genQuad("NEG", tmpFactor, EMPTY_ARG, tmpVar);
         return tmpVar;
     } |
-    id = <ID>
+    id = <IDENTIFIER>
     {
         return id.image;
     } |
